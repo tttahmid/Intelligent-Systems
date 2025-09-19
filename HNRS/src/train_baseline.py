@@ -1,6 +1,6 @@
 import os
 import tensorflow as tf
-from tensorflow.keras import layers, models, callbacks
+from tensorflow.keras import layers, models, callbacks # type: ignore
 
 # Build a simple CNN model for MNIST
 def build_model():
@@ -31,7 +31,7 @@ def main():
     # Train the model
     model.fit(
     x_train, y_train,
-    epochs=15,                  # training the model
+    epochs=15,             
     batch_size=128,
     validation_split=0.1,
     callbacks=[callbacks.EarlyStopping(patience=3, restore_best_weights=True)],

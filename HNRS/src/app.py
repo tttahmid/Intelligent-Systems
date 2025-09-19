@@ -1,6 +1,6 @@
 import tempfile
 import numpy as np
-import streamlit as st
+import streamlit as st # type: ignore
 import tensorflow as tf
 from preprocess import preprocess_to_mnist
 
