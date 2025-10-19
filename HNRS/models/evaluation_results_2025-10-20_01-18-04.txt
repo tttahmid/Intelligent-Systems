@@ -1,0 +1,4 @@
+Model evaluated: D:\Intelligent-Systems\HNRS\models\single_digit_cnn.keras
+Dataset: D:\Intelligent-Systems\HNRS\data\test_digits_conventional
+Custom Test Accuracy: 0.9765
+Custom Test Loss: 0.0798
