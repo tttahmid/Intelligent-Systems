@@ -1,76 +1,75 @@
-# HNRS/src/train_baseline.py
 import os
 import tensorflow as tf
-from tensorflow.keras import layers, models, callbacks # type: ignore
+from tensorflow.keras import layers, models, callbacks
+from sklearn.model_selection import train_test_split
+import numpy as np
 import pickle
+# pyright: reportMissingImports=false
 
-# Build CNN model
 def build_model():
     model = models.Sequential([
-        layers.Input((28, 28, 1)),
-        layers.Conv2D(32, 3, activation='relu'),
-        layers.MaxPool2D(),
-        layers.Conv2D(64, 3, activation='relu'),
-        layers.MaxPool2D(),
-        layers.Flatten(),
-        layers.Dense(128, activation='relu'),
-        layers.Dense(10, activation='softmax')
+        layers.Input((64, 84, 1)),
+        layers.Conv2D(32, (3, 3), activation='relu', padding='same'),
+        layers.MaxPool2D((2, 2)),
+        layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
+        layers.MaxPool2D((2, 2)),
+        layers.Conv2D(128, (3, 3), activation='relu', padding='same'),
+        layers.UpSampling2D((2, 2)),
+        layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
+        layers.UpSampling2D((2, 2)),
+        layers.Conv2D(11, (1, 1), activation='softmax')  # 11 classes: digits 0–9 + background
     ])
-    model.compile(
-        optimizer='adam',
-        loss='sparse_categorical_crossentropy',
-        metrics=['accuracy']
-    )
+    model.compile(optimizer='adam',
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
     return model
 
+def load_multi_digit_dataset():
+    data_dir = r"D:\Multi_digits"
+    X = np.load(os.path.join(data_dir, "combined.npy"))
+    y = np.load(os.path.join(data_dir, "segmented.npy"))
+
+    print("Loaded dataset:")
+    print(f"Images shape: {X.shape}")
+    print(f"Labels shape: {y.shape}")
+
+    X = X.astype("float32") / 255.0
+    if len(X.shape) == 3:
+        X = X[..., np.newaxis]
+
+    y = y.astype("float32")
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    return X_train, X_test, y_train, y_test
+
 def main():
-    # Paths to Kaggle dataset
-    train_dir = r"D:\Intelligent System\HNRS\data\train_custom"
-    test_dir  = r"D:\Intelligent System\HNRS\data\test_custom"
-
-    # Load training + testing data
-    datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1./255)
-
-    train_data = datagen.flow_from_directory(
-        train_dir,
-        target_size=(28, 28),
-        color_mode="grayscale",
-        class_mode="sparse",
-        batch_size=128,
-        shuffle=True
-    )
-
-    test_data = datagen.flow_from_directory(
-        test_dir,
-        target_size=(28, 28),
-        color_mode="grayscale",
-        class_mode="sparse",
-        batch_size=128,
-        shuffle=False
-    )
-
-    # Build and train model
+    X_train, X_test, y_train, y_test = load_multi_digit_dataset()
     model = build_model()
-    os.makedirs("models", exist_ok=True)
+
+    # Save inside the main HNRS\models folder
+    save_dir = r"D:\Intelligent-Systems\HNRS\models"
+    os.makedirs(save_dir, exist_ok=True)
 
     history = model.fit(
-        train_data,
+        X_train, y_train,
+        validation_data=(X_test, y_test),
         epochs=15,
-        validation_data=test_data,
+        batch_size=8,
         callbacks=[callbacks.EarlyStopping(patience=3, restore_best_weights=True)],
         verbose=1
     )
 
-    # Save model + training history
-    model.save("models/kaggle_cnn.keras")
-    print("Saved model -> models/kaggle_cnn.keras")
+    model_path = os.path.join(save_dir, "multi_mnist_segmentation.keras")
+    history_path = os.path.join(save_dir, "training_history_multi.pkl")
 
-    with open("models/training_history.pkl", "wb") as f:
+    model.save(model_path)
+    print(f"Saved model -> {model_path}")
+
+    with open(history_path, "wb") as f:
         pickle.dump(history.history, f)
-    print("Saved training history -> models/training_history.pkl")
+    print(f"Saved training history -> {history_path}")
 
-    # Evaluate on test set
-    test_loss, test_acc = model.evaluate(test_data, verbose=0)
+    test_loss, test_acc = model.evaluate(X_test, y_test, verbose=0)
     print(f"Test accuracy: {test_acc:.4f}, Test loss: {test_loss:.4f}")
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ import os
 import sys
 import numpy as np
 import tensorflow as tf
+import cv2
 from preprocess import preprocess_to_mnist
 from datetime import datetime
 
@@ -14,17 +15,51 @@ plt.ioff()  # disable interactive mode
 import seaborn as sns  # type: ignore
 from sklearn.metrics import confusion_matrix, classification_report
 from collections import Counter
-import cv2
 
 MODEL_PATH = "../models/mnist_cnn.keras"
 
 
+# Function: Segment digits in multi-digit image
+
+def segment_digits_from_image(img_path):
+    """Segment multi-digit image into individual 28x28 digit crops."""
+    img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+    if img is None:
+        raise ValueError(f"Cannot read image: {img_path}")
+
+    # Binarize and invert
+    _, thresh = cv2.threshold(img, 128, 255, cv2.THRESH_BINARY_INV)
+
+    # Find contours (each contour should represent one digit)
+    contours, _ = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Sort contours from left to right (so digits are in correct order)
+    boxes = sorted([cv2.boundingRect(c) for c in contours], key=lambda b: b[0])
+
+    digit_imgs = []
+    for (x, y, w, h) in boxes:
+        # Filter out small noise contours
+        if w < 10 or h < 10:
+            continue
+        digit = thresh[y:y + h, x:x + w]
+        digit = cv2.resize(digit, (28, 28))
+        digit = digit.astype("float32") / 255.0
+        digit_imgs.append(digit.reshape(1, 28, 28, 1))
+
+    return digit_imgs
+
+
+# Function: Predict single digit
+ 
 def predict_single(model, img_path):
     x = preprocess_to_mnist(img_path, invert_if_needed=True, threshold=False)
     probs = model.predict(x, verbose=0)[0]
     pred = int(np.argmax(probs))
     return pred, probs
 
+
+
+# Main program
 
 def main():
     if len(sys.argv) < 2:
@@ -48,6 +83,9 @@ def main():
 
     with open(result_file, "w") as f:
 
+     
+        # Folder of images
+     
         if os.path.isdir(path):
             results = []
             for root, _, files in os.walk(path):
@@ -81,14 +119,12 @@ def main():
             print(summary.strip())
             f.write(summary)
 
-            # --- VISUALS + REPORTS START ---
+            # VISUALS and REPORTS START 
             if total > 0:
-                # Confusion Matrix
                 y_true = [int(true) for _, true, _ in results]
                 y_pred = [int(pred) for _, _, pred in results]
                 cm = confusion_matrix(y_true, y_pred)
 
-                # --- Per-class accuracy ---
                 class_totals = Counter(y_true)
                 class_correct = Counter([t for t, p in zip(y_true, y_pred) if t == p])
 
@@ -100,13 +136,11 @@ def main():
                     print(line.strip())
                     f.write(line)
 
-                # --- Classification Report ---
                 report = classification_report(y_true, y_pred, digits=4)
                 print("\nClassification Report:\n", report)
                 f.write("\nClassification Report:\n")
                 f.write(report + "\n")
 
-                # Save confusion matrix
                 plt.figure(figsize=(8, 6))
                 sns.heatmap(
                     cm, annot=True, fmt="d", cmap="Blues",
@@ -121,7 +155,6 @@ def main():
                 print(f"Saved confusion matrix -> {cm_path}")
                 f.write(f"Confusion matrix saved -> {cm_path}\n")
 
-                # Sample predictions gallery (up to 25 images)
                 max_show = min(25, total)
                 plt.figure(figsize=(12, 12))
                 for i, (img_path, true, pred) in enumerate(results[:max_show]):
@@ -138,23 +171,42 @@ def main():
                 plt.close("all")
                 print(f"Saved sample predictions gallery -> {gallery_path}")
                 f.write(f"Sample predictions gallery saved -> {gallery_path}\n")
-            # --- VISUALS + REPORTS END ---
+            #  VISUALS + REPORTS END 
 
+    
+        # Case 2: Single image (detect multi-digit)
         else:
-            pred, probs = predict_single(model, path)
-            probs_str = " ".join(f"{p:.3f}" for p in probs)
-            line = f"Prediction: {pred}\nProbs (0–9): {probs_str}\n"
-            print(line.strip())
-            f.write(line)
+            try:
+                digit_imgs = segment_digits_from_image(path)
+            except Exception as e:
+                print(f"Segmentation failed: {e}")
+                digit_imgs = []
 
-            # --- VISUAL FOR SINGLE IMAGE ---
-            plt.bar(range(10), probs)
-            plt.title(f"Prediction Probabilities for {os.path.basename(path)}")
-            bar_path = f"models/probabilities_{timestamp}.png"
-            plt.savefig(bar_path)
-            plt.close("all")
-            print(f"Saved probability bar chart -> {bar_path}")
-            f.write(f"Probability bar chart saved -> {bar_path}\n")
+            if len(digit_imgs) > 1:
+                print(f"Detected {len(digit_imgs)} digits – performing multi-digit recognition...\n")
+                result_digits = []
+                for d in digit_imgs:
+                    probs = model.predict(d, verbose=0)[0]
+                    pred = int(np.argmax(probs))
+                    result_digits.append(str(pred))
+                final_number = "".join(result_digits)
+                print(f"Predicted Number: {final_number}")
+                f.write(f"Predicted multi-digit number: {final_number}\n")
+            else:
+                pred, probs = predict_single(model, path)
+                probs_str = " ".join(f"{p:.3f}" for p in probs)
+                line = f"Prediction: {pred}\nProbs (0–9): {probs_str}\n"
+                print(line.strip())
+                f.write(line)
+
+                # VISUAL FOR SINGLE IMAGE 
+                plt.bar(range(10), probs)
+                plt.title(f"Prediction Probabilities for {os.path.basename(path)}")
+                bar_path = f"models/probabilities_{timestamp}.png"
+                plt.savefig(bar_path)
+                plt.close("all")
+                print(f"Saved probability bar chart -> {bar_path}")
+                f.write(f"Probability bar chart saved -> {bar_path}\n")
 
     print(f"Results saved -> {result_file}")
 
