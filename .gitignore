@@ -1,13 +1,35 @@
-﻿# Virtual environments
+﻿# ===== Python / Virtual Environment =====
 .venv/
 venv/
-**/.venv/**
-**/venv/**
+**/__pycache__/
+*.py[cod]
+*.pkl
+*.h5
+*.keras
 
-# Python cache
-__pycache__/
-*.pyc
+# ===== Data / Logs / Temp Files =====
+*.log
+*.csv
+*.npy
+*.npz
+*.tmp
+*.bak
+*.swp
+*.DS_Store
+Thumbs.db
 
-# Local data/output (keep models if you want them in repo)
+# ===== Model Outputs =====
 HNRS/data/
-logs/
+HNRS/src/models/training_history_*.pkl
+HNRS/src/models/training_plots_*.png
+
+# ===== IDE / Editor =====
+.vscode/
+.idea/
+
+# ===== Streamlit Cache =====
+.streamlit/
+__pycache__/
+
+# ===== Jupyter / Notebook =====
+.ipynb_checkpoints/
