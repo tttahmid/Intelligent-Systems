@@ -1,0 +1,37 @@
+Model evaluated: HNRS/models/single_digit_cnn.keras
+Dataset: TensorFlow MNIST (Test Set)
+Test Accuracy: 0.5277
+Test Loss: 2.4540
+
+PER-CLASS ACCURACY:
+==================================================
+Digit 0: 272/980 correct (27.76%)
+Digit 1: 829/1135 correct (73.04%)
+Digit 2: 410/1032 correct (39.73%)
+Digit 3: 247/1010 correct (24.46%)
+Digit 4: 734/982 correct (74.75%)
+Digit 5: 145/892 correct (16.26%)
+Digit 6: 682/958 correct (71.19%)
+Digit 7: 276/1028 correct (26.85%)
+Digit 8: 921/974 correct (94.56%)
+Digit 9: 761/1009 correct (75.42%)
+
+==================================================
+
+CLASSIFICATION REPORT:
+              precision    recall  f1-score   support
+
+           0     0.9680    0.2776    0.4314       980
+           1     0.9606    0.7304    0.8298      1135
+           2     0.9447    0.3973    0.5593      1032
+           3     0.8072    0.2446    0.3754      1010
+           4     0.7809    0.7475    0.7638       982
+           5     0.9477    0.1626    0.2775       892
+           6     0.5809    0.7119    0.6398       958
+           7     0.9684    0.2685    0.4204      1028
+           8     0.2997    0.9456    0.4552       974
+           9     0.3055    0.7542    0.4349      1009
+
+    accuracy                         0.5277     10000
+   macro avg     0.7564    0.5240    0.5187     10000
+weighted avg     0.7593    0.5277    0.5246     10000
