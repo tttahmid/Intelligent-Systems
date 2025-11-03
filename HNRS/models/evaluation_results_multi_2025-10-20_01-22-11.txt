@@ -1,5 +1,0 @@
-Multi-Digit Evaluation Results
-==============================
-Model evaluated: D:\Intelligent-Systems\HNRS\models\multi_mnist_segmentation.keras
-Dataset: D:\Multi_digits
-Pixel-wise Accuracy: 0.9816
