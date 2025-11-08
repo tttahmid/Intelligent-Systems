@@ -12,7 +12,7 @@ import imutils
 st.set_page_config(page_title="HNRS Recognition System", layout="wide")
 st.title("Handwritten Number Recognition System")
 
-# ✅ FIXED: Dynamic model path (works on all systems)
+#  Model Path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "..", "models", "single_digit_cnn.keras")
 
@@ -22,7 +22,7 @@ def load_single_model():
 
 model = load_single_model()
 
-st.sidebar.header("⚙️ Settings")
+st.sidebar.header(" Settings")
 
 image_type = st.sidebar.selectbox(
     "Select Image Type",
