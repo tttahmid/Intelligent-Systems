@@ -12,12 +12,13 @@ import imutils
 st.set_page_config(page_title="HNRS Recognition System", layout="wide")
 st.title("Handwritten Number Recognition System")
 
-MODEL_PATH = r"D:\HNRS\models\single_digit_cnn.keras"
+# ✅ FIXED: Dynamic model path (works on all systems)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "..", "models", "single_digit_cnn.keras")
 
 @st.cache_resource
 def load_single_model():
     return tf.keras.models.load_model(MODEL_PATH) if os.path.exists(MODEL_PATH) else None
-
 
 model = load_single_model()
 
@@ -170,4 +171,4 @@ if uploaded_file:
                     )
 
             with col2:
-                st.image(overlay, caption=f"Detected {len(boxes)} Digits ({segment_method})", use_container_width=True)
+                st.image(overlay, caption="Detected Digits", use_container_width=True)
